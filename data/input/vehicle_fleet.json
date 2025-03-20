@@ -1,0 +1,101 @@
+{
+    "vehicles": [
+      {
+        "id": 1,
+        "type": "Truck",
+        "license_plate": "ABC1D23",
+        "length_m": 7.5,
+        "width_m": 2.5,
+        "height_m": 3.8,
+        "max_weight_kg": 16000,
+        "allowed_in_rodizio": false,
+        "allowed_in_zmrc": false,
+        "allowed_in_ver": false
+      },
+      {
+        "id": 2,
+        "type": "Truck",
+        "license_plate": "EFG2H34",
+        "length_m": 9.0,
+        "width_m": 2.6,
+        "height_m": 4.0,
+        "max_weight_kg": 20000,
+        "allowed_in_rodizio": false,
+        "allowed_in_zmrc": false,
+        "allowed_in_ver": false
+      },
+      {
+        "id": 3,
+        "type": "VUC",
+        "license_plate": "XYZ4E56",
+        "length_m": 6.0,
+        "width_m": 2.2,
+        "height_m": 3.2,
+        "max_weight_kg": 8000,
+        "allowed_in_rodizio": false,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": false
+      },
+      {
+        "id": 4,
+        "type": "VUC",
+        "license_plate": "LMN7J89",
+        "length_m": 6.2,
+        "width_m": 2.3,
+        "height_m": 3.3,
+        "max_weight_kg": 8500,
+        "allowed_in_rodizio": false,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": false
+      },
+      {
+        "id": 5,
+        "type": "Van",
+        "license_plate": "QRS8K01",
+        "length_m": 5.5,
+        "width_m": 2.0,
+        "height_m": 2.5,
+        "max_weight_kg": 3500,
+        "allowed_in_rodizio": true,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": true
+      },
+      {
+        "id": 6,
+        "type": "Van",
+        "license_plate": "TUV9L02",
+        "length_m": 5.8,
+        "width_m": 2.1,
+        "height_m": 2.7,
+        "max_weight_kg": 4000,
+        "allowed_in_rodizio": true,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": true
+      },
+      {
+        "id": 7,
+        "type": "Motorcycle",
+        "license_plate": "MOT1234",
+        "length_m": 2.0,
+        "width_m": 0.8,
+        "height_m": 1.2,
+        "max_weight_kg": 200,
+        "allowed_in_rodizio": true,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": true
+      },
+      {
+        "id": 8,
+        "type": "Motorcycle",
+        "license_plate": "BIKE5678",
+        "length_m": 2.1,
+        "width_m": 0.85,
+        "height_m": 1.3,
+        "max_weight_kg": 220,
+        "allowed_in_rodizio": true,
+        "allowed_in_zmrc": true,
+        "allowed_in_ver": true
+      }
+    ]
+  }
+  
