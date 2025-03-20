@@ -1,0 +1,87 @@
+{
+    "rodizio_municipal": {
+      "name": "Rodízio Municipal",
+      "restriction_times": {
+        "monday": ["07:00-10:00", "17:00-20:00"],
+        "tuesday": ["07:00-10:00", "17:00-20:00"],
+        "wednesday": ["07:00-10:00", "17:00-20:00"],
+        "thursday": ["07:00-10:00", "17:00-20:00"],
+        "friday": ["07:00-10:00", "17:00-20:00"]
+      },
+      "plate_restrictions": {
+        "monday": ["1", "2"],
+        "tuesday": ["3", "4"],
+        "wednesday": ["5", "6"],
+        "thursday": ["7", "8"],
+        "friday": ["9", "0"]
+      },
+      "affected_area": {
+        "description": "Expanded Center (Centro Expandido) of São Paulo",
+        "boundaries": [
+          "Marginal Tietê",
+          "Marginal Pinheiros",
+          "Avenida dos Bandeirantes",
+          "Avenida Afonso D'Escragnole Taunay",
+          "Complexo Viário Maria Maluf",
+          "Avenida Presidente Tancredo Neves",
+          "Avenida das Juntas Provisórias",
+          "Viaduto Grande São Paulo",
+          "Avenida Professor Luís Inácio de Anhaia Melo",
+          "Avenida Salim Farah Maluf"
+        ]
+      },
+      "vehicle_types": ["Passenger Vehicles"],
+      "exceptions": [
+        "Public transportation",
+        "School buses",
+        "Medical services",
+        "Vehicles transporting perishable goods",
+        "Vehicles for persons with disabilities"
+      ]
+    },
+    "zmrc": {
+      "name": "Zona de Máxima Restrição de Circulação (ZMRC)",
+      "restriction_times": {
+        "monday_to_friday": ["05:00-21:00"],
+        "saturday": ["10:00-14:00"],
+        "sundays_and_holidays": "No restrictions"
+      },
+      "vuc_restrictions": {
+        "monday_to_friday": ["05:00-21:00"],
+        "saturday": ["10:00-14:00"]
+      },
+      "affected_area": {
+        "description": "Specific areas within São Paulo defined by CET",
+        "map_link": "https://www.cetsp.com.br/consultas/caminhoes/locais-com-restricao-ao-caminhao/zona-de-maxima-restricao-de-circulacao-zmrc.aspx"
+      },
+      "vehicle_types": ["Trucks", "VUCs"],
+      "exceptions": [
+        "Emergency services",
+        "Public utility services",
+        "Vehicles with special permits"
+      ]
+    },
+    "ver": {
+      "name": "Vias Estruturais Restritas (VER)",
+      "restriction_times": {
+        "monday_to_friday": ["05:00-09:00", "17:00-21:00"],
+        "saturday": ["10:00-14:00"],
+        "sundays_and_holidays": "No restrictions"
+      },
+      "vuc_restrictions": {
+        "monday_to_friday": ["05:00-09:00", "17:00-21:00"],
+        "saturday": ["10:00-14:00"]
+      },
+      "affected_area": {
+        "description": "Specific major roads in São Paulo",
+        "map_link": "https://www.cetsp.com.br/consultas/caminhoes/locais-com-restricao-ao-caminhao/vias-estruturais-restritas-ver-%C2%A7-1o-do-art-2o-da-port-31-16-smtgab.aspx"
+      },
+      "vehicle_types": ["Trucks", "VUCs"],
+      "exceptions": [
+        "Emergency services",
+        "Public utility services",
+        "Vehicles with special permits"
+      ]
+    }
+  }
+  
