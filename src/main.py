@@ -1,30 +1,31 @@
-from etl.extract import extract_road_network, extract_vehicle_fleet
-from mapping.restrictions_map import plot_restrictions
-from mapping.delivery_points import plot_delivery_points, generate_random_delivery_points
-from optimization.route_planner import run_optimized_routing
-import folium
 import os
-import json
+import folium
+from etl.extract import extract_road_network, extract_vehicle_fleet
+from mapping.delivery_points import generate_random_delivery_points, plot_delivery_points
+from mapping.restrictions_map import plot_restrictions
+from optimization.route_planner import run_optimized_routing
+from utils.daytime_config import set_global_delivery_context
 
-# File Paths
+# Constants
 MAP_OUTPUT_DIR = "data/output/maps"
 STEPS_DIR = os.path.join(MAP_OUTPUT_DIR, "steps")
 FINAL_MAP_PATH = os.path.join(MAP_OUTPUT_DIR, "route_plan_map.html")
 
-# Ensure output directories exist
+# Ensure output dirs exist
 os.makedirs(STEPS_DIR, exist_ok=True)
 
 def save_map(base_map, step_name):
-    """Save the current step map."""
-    step_map_path = os.path.join(STEPS_DIR, f"{step_name}.html")
-    base_map.save(step_map_path)
-    print(f"Step saved: {step_map_path}")
+    path = os.path.join(STEPS_DIR, f"{step_name}.html")
+    base_map.save(path)
+    print(f"Step saved: {path}")
 
 def main():
-    """Orchestrate the execution of the entire pipeline."""
     print("Extracting road network and vehicle fleet...")
     G = extract_road_network()
     vehicles = extract_vehicle_fleet()
+
+    print("Setting delivery context (day, hour, holiday)...")
+    set_global_delivery_context(day="Tuesday", hour=10, is_holiday=False)  # 🔧 Adjustable params
 
     print("Generating delivery points...")
     deliveries = generate_random_delivery_points(num_points=10)
@@ -39,10 +40,6 @@ def main():
     print("Adding delivery points and warehouse...")
     base_map = plot_delivery_points(base_map, num_points=10)
     save_map(base_map, "02_delivery_points")
-
-
-    #print("Sample deliveries:", json.dumps(deliveries[:3], indent=4, ensure_ascii=False))  # Show first 3 deliveries
-
 
     print("Computing optimized routes...")
     base_map = run_optimized_routing(base_map, G, vehicles, deliveries)

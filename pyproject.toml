@@ -15,8 +15,37 @@ geopy = "^2.4.1"
 networkx = "^3.4.2"
 osmnx = "^2.0.1"
 scikit-learn = "^1.6.1"
+taskipy = "^1.14.1"
+ruff = "^0.11.0"
 
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88 
+lint.select = ["E", "F", "W", "I"]  
+lint.ignore = ["E203", "E501"]  
+fix = true  
+unsafe-fixes = true  
+
+[tool.ruff.lint.isort]
+combine-as-imports = true  
+known-first-party = ["src"]  
+
+
+
+
+
+[tool.taskipy.tasks]
+test = "pytest"
+run = "poetry run python src/main.py"
+lint = "ruff check src tests" 
+format = "ruff format src tests"  
+fix = "ruff check --fix src tests"  
+precommit = "ruff check --fix src tests && ruff format src tests"
+git_all= "git add . && git commit -m"
+git = "git push origin main"
+
+

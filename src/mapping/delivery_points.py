@@ -1,6 +1,7 @@
-import folium
-import random
 import math
+import random
+
+import folium
 from geopy.distance import geodesic
 
 # Constants
@@ -9,8 +10,9 @@ DELIVERY_RADIUS_KM = 15
 WAREHOUSE_LAT, WAREHOUSE_LON = -23.495652, -46.655389
 WAREHOUSE_OFFSET = 0.000001
 
+
 def generate_random_delivery_points(num_points):
-    """Generate random delivery points with weight, volume, and priority constraints."""
+    """Generate random delivery points with realistic e-commerce weights."""
     delivery_points = []
     for _ in range(num_points):
         while True:
@@ -18,20 +20,32 @@ def generate_random_delivery_points(num_points):
             distance = random.uniform(0, DELIVERY_RADIUS_KM)
             bearing_rad = math.radians(bearing)
             lat_offset = distance * math.cos(bearing_rad) / 111
-            lon_offset = distance * math.sin(bearing_rad) / (111 * math.cos(math.radians(START_LAT)))
+            lon_offset = (
+                distance
+                * math.sin(bearing_rad)
+                / (111 * math.cos(math.radians(START_LAT)))
+            )
 
             new_lat, new_lon = START_LAT + lat_offset, START_LON + lon_offset
 
-            if geodesic((START_LAT, START_LON), (new_lat, new_lon)).km <= DELIVERY_RADIUS_KM:
+            if (
+                geodesic((START_LAT, START_LON), (new_lat, new_lon)).km
+                <= DELIVERY_RADIUS_KM
+            ):
                 delivery = {
                     "coords": (new_lat, new_lon),
-                    "weight_kg": random.uniform(50, 500),  # Random weight between 50kg and 500kg
-                    "volume_m3": random.uniform(0.1, 5),  # Random volume between 0.1m³ and 5m³
-                    "priority": random.choice(["High", "Medium", "Low"])
+                    "weight_kg": random.uniform(
+                        1, 30
+                    ),  # ✅ E-commerce realistic weight (1kg - 30kg)
+                    "volume_m3": random.uniform(
+                        0.01, 0.2
+                    ),  # ✅ Small packages (0.01m³ - 0.2m³)
+                    "priority": random.choice(["High", "Medium", "Low"]),
                 }
                 delivery_points.append(delivery)
                 break
     return delivery_points
+
 
 def plot_delivery_points(base_map, num_points=10):
     """Add delivery points & warehouse to an existing map."""
@@ -47,22 +61,22 @@ def plot_delivery_points(base_map, num_points=10):
 
         folium.Marker(
             location=(lat, lon),
-            popup=f"Delivery {idx+1} | Weight: {delivery['weight_kg']:.1f}kg | Volume: {delivery['volume_m3']:.2f}m³",
+            popup=f"Delivery {idx + 1} | Weight: {delivery['weight_kg']:.1f}kg | Volume: {delivery['volume_m3']:.2f}m³",
             tooltip=f"Lat: {lat:.5f}, Lon: {lon:.5f}",
-            icon=folium.Icon(color="green", icon="shopping-cart", prefix="fa")
+            icon=folium.Icon(color="green", icon="shopping-cart", prefix="fa"),
         ).add_to(delivery_points_layer)
 
     # Add warehouse start and end markers
     folium.Marker(
         location=(WAREHOUSE_LAT, WAREHOUSE_LON),
         popup="Warehouse Start",
-        icon=folium.Icon(color="blue", icon="play", prefix="fa")
+        icon=folium.Icon(color="blue", icon="play", prefix="fa"),
     ).add_to(warehouse_layer)
 
     folium.Marker(
         location=(WAREHOUSE_LAT + WAREHOUSE_OFFSET, WAREHOUSE_LON + WAREHOUSE_OFFSET),
         popup="Warehouse End",
-        icon=folium.Icon(color="red", icon="stop", prefix="fa")
+        icon=folium.Icon(color="red", icon="stop", prefix="fa"),
     ).add_to(warehouse_layer)
 
     # Add layers to the map

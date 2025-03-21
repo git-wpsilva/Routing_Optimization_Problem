@@ -1,2 +1,3 @@
-Vehicle,Route,Stops,Distance (km),Time (min)
-XYZ4E56,Point 1 → Point 2 → Point 3 → Point 4 → Point 5 → Point 6 → Point 7 → Point 8 → Point 9 → Point 10,10,84.4,168794.6
+Vehicle ID,License Plate,Type,Route,Stops,Distance (km),Time (hours)
+7,MOT1234,Motorcycle,No Deliveries,0,69.02,2.3
+8,BIKE5678,Motorcycle,Stop 1 → Delivery Point 1 → Stop 2 → Delivery Point 2 → Stop 3 → Delivery Point 2 → Stop 4 → Delivery Point 2 → Stop 5 → Delivery Point 4 → Stop 6 → Delivery Point 4 → Stop 7 → Delivery Point 5 → Stop 8 → Delivery Point 5 → Stop 9 → Delivery Point 5,9,118.4,3.95

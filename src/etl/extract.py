@@ -6,10 +6,12 @@ import pickle
 VEHICLE_FLEET_FILE = "data/input/vehicle_fleet.json"
 ROAD_NETWORK_FILE = "data/output/road_network.pkl"
 
+
 def load_json(filepath):
     """Load a JSON file and return its content."""
-    with open(filepath, 'r', encoding='utf-8') as file:
+    with open(filepath, "r", encoding="utf-8") as file:
         return json.load(file)
+
 
 def extract_vehicle_fleet():
     """Extract raw vehicle fleet data."""
@@ -18,6 +20,7 @@ def extract_vehicle_fleet():
 
     print("Extracting vehicle fleet data...")
     return load_json(VEHICLE_FLEET_FILE)["vehicles"]
+
 
 def extract_road_network():
     """Extract raw road network data."""
@@ -28,11 +31,13 @@ def extract_road_network():
     with open(ROAD_NETWORK_FILE, "rb") as f:
         return pickle.load(f)
 
+
 # Run extraction
 def run_extraction():
     """Run the extraction process."""
     extract_vehicle_fleet()
     extract_road_network()
+
 
 if __name__ == "__main__":
     run_extraction()

@@ -1,11 +1,14 @@
 import json
-import folium
 import os
+
+import folium
+
 
 def load_json(filepath):
     """Load a JSON file and return its content."""
-    with open(filepath, 'r', encoding='utf-8') as file:
+    with open(filepath, "r", encoding="utf-8") as file:
         return json.load(file)
+
 
 def generate_map():
     """Load restriction data and generate a Folium map with layers."""
@@ -15,18 +18,14 @@ def generate_map():
     restriction_files = {
         "Restrição 1": "data/output/enriched/Caminhão 1.json",
         "Restrição 2": "data/output/enriched/Caminhão 2.json",
-        "Restrição 3": "data/output/enriched/Caminhão 3.json"
+        "Restrição 3": "data/output/enriched/Caminhão 3.json",
     }
-    
+
     # Initialize the map centered in São Paulo
     sao_paulo_map = folium.Map(location=[-23.5505, -46.6333], zoom_start=12)
 
     # Define colors for different restriction types
-    restriction_colors = {
-        "Rodízio Municipal": "red",
-        "VER": "darkred",
-        "VUC": "blue"
-    }
+    restriction_colors = {"Rodízio Municipal": "red", "VER": "darkred", "VUC": "blue"}
 
     for layer_name, filepath in restriction_files.items():
         restriction_layer = folium.FeatureGroup(name=layer_name)
@@ -42,10 +41,15 @@ def generate_map():
                 style_function=lambda f: {
                     "color": color,
                     "weight": 3 if color == "darkred" else 2,
-                    "fillOpacity": 0.2 if color == "red" else 0.8
+                    "fillOpacity": 0.2 if color == "red" else 0.8,
                 },
-                tooltip=folium.Tooltip(feature["properties"].get("Name", "Unknown Road")),
-                popup=folium.Popup(feature["properties"].get("Description", "No Description"), max_width=300)
+                tooltip=folium.Tooltip(
+                    feature["properties"].get("Name", "Unknown Road")
+                ),
+                popup=folium.Popup(
+                    feature["properties"].get("Description", "No Description"),
+                    max_width=300,
+                ),
             ).add_to(restriction_layer)
 
         sao_paulo_map.add_child(restriction_layer)
@@ -57,9 +61,11 @@ def generate_map():
     sao_paulo_map.save(output_path)
     print(f"Map successfully saved to: {output_path}")
 
+
 def run_pipeline():
     """Execute the full data loading and visualization process."""
     generate_map()
+
 
 if __name__ == "__main__":
     run_pipeline()

@@ -1,11 +1,14 @@
-import folium
 import json
 import os
 
+import folium
+
+
 def load_json(filepath):
     """Load a JSON file."""
-    with open(filepath, 'r', encoding='utf-8') as file:
+    with open(filepath, "r", encoding="utf-8") as file:
         return json.load(file)
+
 
 def plot_restrictions(base_map):
     """Overlay restriction zones on an existing map."""
@@ -14,7 +17,7 @@ def plot_restrictions(base_map):
     restriction_files = {
         "Zona do Mini Anel - Zona de Rodízio": "data/output/enriched/Caminhão 1.json",
         "Restrição 2": "data/output/enriched/Caminhão 2.json",
-        "Restrição 3": "data/output/enriched/Caminhão 3.json"
+        "Restrição 3": "data/output/enriched/Caminhão 3.json",
     }
 
     # Define colors for restriction types
@@ -24,7 +27,7 @@ def plot_restrictions(base_map):
         if not os.path.exists(filepath):
             print(f"Warning: Restriction file {filepath} not found. Skipping...")
             continue
-        
+
         layer = folium.FeatureGroup(name=layer_name)
         restriction_data = load_json(filepath)
 
@@ -38,9 +41,12 @@ def plot_restrictions(base_map):
                 style_function=lambda f: {
                     "color": color,
                     "weight": 3,
-                    "fillOpacity": 0.2 if color == "red" else 0.8
+                    "fillOpacity": 0.2,  # if color == "red" else 0.8,
                 },
-                popup=folium.Popup(feature["properties"].get("Description", "No Description"), max_width=300)
+                popup=folium.Popup(
+                    feature["properties"].get("Description", "No Description"),
+                    max_width=300,
+                ),
             ).add_to(layer)
 
         base_map.add_child(layer)
