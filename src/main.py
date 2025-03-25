@@ -1,40 +1,36 @@
 import os
-
 import folium
 
 from etl.extract import extract_road_network, extract_vehicle_fleet
-from mapping.delivery_points import (
-    generate_random_delivery_points,
-    plot_delivery_points,
-)
+from mapping.delivery_points import generate_random_delivery_points, plot_delivery_points
 from mapping.restrictions_map import plot_restrictions
-from optimization.route_planner import run_optimized_routing
-from utils.daytime_config import set_global_delivery_context
+from optimization.route_planner import (
+    assign_deliveries_to_routes,
+    compute_shortest_path,
+    generate_delivery_table,
+    plot_route,
+    find_closest_delivery,
+)
 
 # Constants
 MAP_OUTPUT_DIR = "data/output/maps"
 STEPS_DIR = os.path.join(MAP_OUTPUT_DIR, "steps")
 FINAL_MAP_PATH = os.path.join(MAP_OUTPUT_DIR, "route_plan_map.html")
+WAREHOUSE_COORDS = (-23.495652, -46.655389)
 
 # Ensure output dirs exist
 os.makedirs(STEPS_DIR, exist_ok=True)
 
-
 def save_map(base_map, step_name):
-    path = os.path.join(STEPS_DIR, f"{step_name}.html")
-    base_map.save(path)
-    print(f"Step saved: {path}")
-
+    """Save an intermediate step of the map."""
+    step_map_path = os.path.join(STEPS_DIR, f"{step_name}.html")
+    base_map.save(step_map_path)
+    print(f"Step saved: {step_map_path}")
 
 def main():
-    print("Extracting road network and vehicle fleet...")
+    print("Loading road network and vehicles...")
     G = extract_road_network()
     vehicles = extract_vehicle_fleet()
-
-    print("Setting delivery context (day, hour, holiday)...")
-    set_global_delivery_context(
-        day="Tuesday", hour=10, is_holiday=False
-    )  # 🔧 Adjustable params
 
     print("Generating delivery points...")
     deliveries = generate_random_delivery_points(num_points=10)
@@ -46,17 +42,33 @@ def main():
     base_map = plot_restrictions(base_map)
     save_map(base_map, "01_restrictions")
 
-    print("Adding delivery points and warehouse...")
-    base_map = plot_delivery_points(base_map, num_points=10)
+    print("Plotting delivery points and warehouse...")
+    base_map = plot_delivery_points(base_map, deliveries)
     save_map(base_map, "02_delivery_points")
 
-    print("Computing optimized routes...")
-    base_map = run_optimized_routing(base_map, G, vehicles, deliveries)
+    print("Assigning routes and generating delivery table...")
+    assignments = assign_deliveries_to_routes(G, deliveries, vehicles)
+
+    routes_data = {}
+    for route_number, assignment in assignments.items():
+        vehicle = assignment["vehicle"]
+        deliveries_for_vehicle = assignment["deliveries"]
+        path_nodes, distance = compute_shortest_path(G, WAREHOUSE_COORDS, deliveries_for_vehicle)
+
+        routes_data[route_number] = {
+            "vehicle": vehicle,
+            "path": path_nodes,
+            "distance_m": distance,
+            "deliveries": deliveries_for_vehicle,
+        }
+
+        base_map = plot_route(base_map, G, path_nodes, vehicle["license_plate"], route_number)
+
+    generate_delivery_table(G, routes_data, vehicles, deliveries)
     save_map(base_map, "03_routes")
 
     print("Final map saved.")
     base_map.save(FINAL_MAP_PATH)
-
 
 if __name__ == "__main__":
     main()

@@ -1,4 +1,8 @@
-import sys
+import pickle
 
-for path in sys.path:
-    print(path)
+with open("data/output/road_network.pkl", "rb") as f:
+    G = pickle.load(f)
+
+print("Tipo de G:", type(G))
+print("Tem atributo `.graph`?", hasattr(G, "graph"))
+
