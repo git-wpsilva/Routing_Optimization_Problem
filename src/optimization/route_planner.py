@@ -22,18 +22,8 @@ def load_road_network():
         return pickle.load(f)
 
 
-def generate_distinct_colors(num_colors):
-    """Generate a list of distinct colors."""
-    colors = []
-    for _ in range(num_colors):
-        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
-        colors.append(color)
-    return colors
-
-
 def get_nearest_node(G, lat, lon):
     return ox.distance.nearest_nodes(G, X=lon, Y=lat)
-
 
 
 def is_vehicle_allowed(vehicle, delivery):
@@ -72,49 +62,71 @@ def is_vehicle_allowed(vehicle, delivery):
     return True
 
 
-def find_closest_delivery(G, node, deliveries, max_distance_m=150):
-    """Find the closest delivery to a given node within a threshold."""
-    node_coord = (G.nodes[node]["y"], G.nodes[node]["x"])
-    closest = None
-    min_dist = float("inf")
-
-    for d in deliveries:
-        d_coord = tuple(d["coords"])
-        dist = geodesic(node_coord, d_coord).meters
-        if dist < min_dist and dist <= max_distance_m:
-            closest = d
-            min_dist = dist
-
-    return closest
-
-
 def assign_deliveries_to_routes(G, deliveries, vehicles):
+    print("\n[OPTIMIZER] Assigning deliveries with heuristic optimization...")
+
+    deliveries = sorted(
+        deliveries,
+        key=lambda d: (d["priority"], -d["weight_kg"], -d["volume_m3"]),
+        reverse=True,
+    )
+
+    vehicles = sorted(
+        vehicles,
+        key=lambda v: (v["max_weight_kg"], v["length_m"] * v["width_m"] * v["height_m"]),
+        reverse=True,
+    )
+
+    assigned_deliveries = set()
     assignments = {}
     route_id = 1
 
     for vehicle in vehicles:
-        vehicle_deliveries = []
+        cap_weight = vehicle["max_weight_kg"]
+        cap_volume = vehicle["length_m"] * vehicle["width_m"] * vehicle["height_m"]
+        used_weight = 0
+        used_volume = 0
+        assigned = []
 
         for delivery in deliveries:
-            if is_vehicle_allowed(vehicle, delivery):
-                if delivery["weight_kg"] <= vehicle["max_weight_kg"] and delivery[
-                    "volume_m3"
-                ] <= (vehicle["length_m"] * vehicle["width_m"] * vehicle["height_m"]):
-                    vehicle_deliveries.append(delivery)
+            if delivery["id"] in assigned_deliveries:
+                continue
 
-        if vehicle_deliveries:
-            path_nodes, total_distance = compute_shortest_path(
-                G, WAREHOUSE_COORDS, vehicle_deliveries
-            )
+            if not is_vehicle_allowed(vehicle, delivery):
+                continue
 
-            assignments[f"Route {route_id}"] = {
-                "vehicle": vehicle,
-                "deliveries": vehicle_deliveries,
-                "path": path_nodes,
-                "distance_m": total_distance,
-            }
+            if delivery["weight_kg"] > (cap_weight - used_weight):
+                continue
 
-            route_id += 1
+            if delivery["volume_m3"] > (cap_volume - used_volume):
+                continue
+
+            assigned.append(delivery)
+            used_weight += delivery["weight_kg"]
+            used_volume += delivery["volume_m3"]
+            assigned_deliveries.add(delivery["id"])
+
+        if not assigned:
+            continue  # Skip unused vehicle
+
+        path_nodes, total_distance = compute_shortest_path(G, WAREHOUSE_COORDS, assigned)
+
+        assignments[f"Route {route_id}"] = {
+            "vehicle": vehicle,
+            "deliveries": assigned,
+            "path": path_nodes,
+            "distance_m": total_distance,
+            "total_stops": len(assigned),
+            "license_plate": vehicle["license_plate"],
+        }
+
+        route_id += 1
+
+    unassigned = [d for d in deliveries if d["id"] not in assigned_deliveries]
+    if unassigned:
+        print("\n[WARNING] Unassigned deliveries:")
+        for d in unassigned:
+            print(f" - ID {d['id']} | {d['coords']} | Priority: {d['priority']}")
 
     return assignments
 
@@ -155,6 +167,33 @@ def plot_route(base_map, G, path_nodes, vehicle_label, color):
     route_layer.add_to(base_map)
     return base_map
 
+
+def generate_distinct_colors(num_colors):
+    """Generate a list of distinct colors."""
+    colors = []
+    for _ in range(num_colors):
+        color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+        colors.append(color)
+    return colors
+
+
+def find_closest_delivery(G, node, deliveries, max_distance_m=150):
+    """Find the closest delivery to a given node within a threshold."""
+    node_coord = (G.nodes[node]["y"], G.nodes[node]["x"])
+    closest = None
+    min_dist = float("inf")
+
+    for d in deliveries:
+        d_coord = tuple(d["coords"])
+        dist = geodesic(node_coord, d_coord).meters
+        if dist < min_dist and dist <= max_distance_m:
+            closest = d
+            min_dist = dist
+
+    return closest
+
+
+
 def generate_delivery_table(G, routes_data, vehicles, deliveries):
     """
     Create a detailed delivery route table with:
@@ -165,7 +204,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
 
     rows = []
     route_totals = []
-    total_weight = total_volume = total_distance = total_time = 0
+    total_weight = total_volume = total_distance = total_time = total_stops = 0
     ASSUME_SPEED_KMPH = 30
 
     # 🚀 Precompute nearest node for each delivery point
@@ -180,11 +219,11 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         for u in unmatched:
             print(f"- ID {u['id']} at {u['coords']}")
 
-
-    for route_index, (vehicle_plate, assignment) in enumerate(routes_data.items(), start=1):
+    for route_index, (route_name, assignment) in enumerate(routes_data.items(), start=1):
         vehicle = assignment["vehicle"]
         path_nodes = assignment["path"]
-        delivery_points = assignment["deliveries"]
+        vehicle_plate = assignment["vehicle"]["license_plate"]
+        total_stops_route = assignment.get("total_stops", 0)
 
         stop_counter = 0
         route_weight = 0
@@ -200,7 +239,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
             vehicle["type"],
             "START",
             "Warehouse",
-            "", "", "", "", "", "", "", ""
+            "", "", "", "", "", "", "", "", ""
         ])
 
         for node in path_nodes[1:-1]:  # Ignore start/end nodes
@@ -222,7 +261,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
                     matched_dp["coords"][1],
                     weight,
                     volume,
-                    "", "", "", ""
+                    "", "", "", "", ""
                 ])
 
         # END point
@@ -233,7 +272,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
             vehicle["type"],
             f"END",
             "Warehouse",
-            "", "", "", "", "", "", "", ""
+            "", "", "", "", "", "", "", "", ""
         ])
 
         # Route summary row
@@ -251,7 +290,8 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
             f"{(route_weight / vehicle['max_weight_kg']):.0%}",
             f"{(route_volume / (vehicle['length_m'] * vehicle['width_m'] * vehicle['height_m'])):.0%}",
             route_distance_km,
-            route_time_hr
+            route_time_hr,
+            total_stops_route
         ])
 
         # Update totals
@@ -259,6 +299,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         total_volume += route_volume
         total_distance += route_distance_km
         total_time += route_time_hr
+        total_stops += total_stops_route
 
     # Global TOTAL row
     rows.append([
@@ -266,7 +307,7 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         "", "", "", "", "", "", "",
         total_weight,
         total_volume,
-        "", "", total_distance, total_time
+        "", "", total_distance, total_time, total_stops
     ])
 
     # Save as DataFrame
@@ -284,9 +325,11 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         "Weight %",
         "Volume %",
         "Distance (km)",
-        "Time (hours)"
+        "Time (hours)",
+        "Total Stops"
     ])
 
     csv_path = "data/output/delivery_routes.csv"
     df.to_csv(csv_path, index=False)
     print(f"Saved delivery route table → {csv_path}")
+
