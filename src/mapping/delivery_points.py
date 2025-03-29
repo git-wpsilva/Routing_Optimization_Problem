@@ -11,23 +11,28 @@ WAREHOUSE_COORDS = (WAREHOUSE_LAT, WAREHOUSE_LON)
 DELIVERY_CENTER_COORDS = (DELIVERY_CENTER_LAT, DELIVERY_CENTER_LON)
 
 
-def generate_random_delivery_points(num_points=10):
+def generate_random_delivery_points(G, num_points=10):
     """
-    Generate random delivery points within DELIVERY_RADIUS_KM of the delivery center.
-    Adds unique IDs and synthetic restrictions to each delivery point.
+    Generate delivery points directly on road network nodes within radius.
     """
-    random.seed(10)
+    random.seed(5)
     delivery_points = []
+    candidate_nodes = []
 
-    while len(delivery_points) < num_points:
-        lat = random.uniform(DELIVERY_CENTER_LAT - 0.15, DELIVERY_CENTER_LAT + 0.15)
-        lon = random.uniform(DELIVERY_CENTER_LON - 0.15, DELIVERY_CENTER_LON + 0.15)
-        if geodesic(DELIVERY_CENTER_COORDS, (lat, lon)).km > DELIVERY_RADIUS_KM:
-            continue
+    for node, data in G.nodes(data=True):
+        coord = (data["y"], data["x"])
+        if geodesic(DELIVERY_CENTER_COORDS, coord).km <= DELIVERY_RADIUS_KM:
+            candidate_nodes.append((node, coord))
 
+    if len(candidate_nodes) < num_points:
+        raise ValueError("Not enough road nodes within delivery radius to generate delivery points.")
+
+    sampled = random.sample(candidate_nodes, num_points)
+
+    for i, (node, coord) in enumerate(sampled, start=1):
         delivery = {
-            "id": len(delivery_points) + 1,
-            "coords": (lat, lon),
+            "id": i,
+            "coords": coord,
             "weight_kg": round(random.uniform(5, 50), 2),
             "volume_m3": round(random.uniform(0.05, 0.3), 3),
             "priority": random.choice(["High", "Medium", "Low"]),
@@ -40,7 +45,6 @@ def generate_random_delivery_points(num_points=10):
                 "Friday": list(range(9, 17)),
             },
         }
-
         delivery_points.append(delivery)
 
     return delivery_points
