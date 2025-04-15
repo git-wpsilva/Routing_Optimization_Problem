@@ -7,7 +7,6 @@ import pandas as pd
 from geopy.distance import geodesic
 
 from utils.config import (
-    ASSUME_SPEED_KMPH,
     DELIVERY_DAY,
     DELIVERY_HOUR,
     HOLIDAY,
@@ -49,19 +48,27 @@ def is_vehicle_allowed(vehicle, delivery):
         and plate_digit in rodizio_map[DELIVERY_DAY]
         and not vehicle["allowed_in_rodizio"]
     ):
-        print(f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in Rodízio for delivery {delivery['id']}")
+        print(
+            f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in Rodízio for delivery {delivery['id']}"
+        )
         return False
 
     if restriction == "VER" and not vehicle["allowed_in_ver"]:
-        print(f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in VER for delivery {delivery['id']}")
+        print(
+            f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in VER for delivery {delivery['id']}"
+        )
         return False
     if restriction == "ZMRC" and not vehicle["allowed_in_zmrc"]:
-        print(f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in ZMRC for delivery {delivery['id']}")
+        print(
+            f"[BLOCKED] Vehicle {vehicle['license_plate']} not allowed in ZMRC for delivery {delivery['id']}"
+        )
         return False
 
     if DELIVERY_DAY in time_rules:
         if DELIVERY_HOUR not in time_rules[DELIVERY_DAY]:
-            print(f"[BLOCKED] Time restriction for delivery {delivery['id']} on {DELIVERY_DAY} at {DELIVERY_HOUR}h")
+            print(
+                f"[BLOCKED] Time restriction for delivery {delivery['id']} on {DELIVERY_DAY} at {DELIVERY_HOUR}h"
+            )
             return False
 
     return True
@@ -126,7 +133,10 @@ def assign_deliveries_to_routes(G, deliveries, vehicles):
 
     vehicles = sorted(
         vehicles,
-        key=lambda v: (v["max_weight_kg"], v["length_m"] * v["width_m"] * v["height_m"]),
+        key=lambda v: (
+            v["max_weight_kg"],
+            v["length_m"] * v["width_m"] * v["height_m"],
+        ),
         reverse=True,
     )
 
@@ -177,7 +187,9 @@ def assign_deliveries_to_routes(G, deliveries, vehicles):
         if not assigned:
             continue
 
-        path_nodes, total_distance = compute_shortest_path(G, WAREHOUSE_COORDS, assigned)
+        path_nodes, total_distance = compute_shortest_path(
+            G, WAREHOUSE_COORDS, assigned
+        )
 
         assignments[f"Route {route_id}"] = {
             "vehicle": vehicle,
@@ -186,7 +198,7 @@ def assign_deliveries_to_routes(G, deliveries, vehicles):
             "distance_m": total_distance,
             "total_stops": len(assigned),
             "license_plate": vehicle["license_plate"],
-            "delivery_nodes": delivery_nodes
+            "delivery_nodes": delivery_nodes,
         }
 
         route_id += 1
@@ -198,6 +210,7 @@ def assign_deliveries_to_routes(G, deliveries, vehicles):
             print(f" - ID {d['id']} | {d['coords']} | Priority: {d['priority']}")
 
     return assignments
+
 
 def plot_route(base_map, G, path_nodes, vehicle_label, color):
     from folium import FeatureGroup, PolyLine
@@ -239,6 +252,7 @@ def find_closest_delivery(G, node, deliveries, max_distance_m=150):
 
     return closest
 
+
 def generate_delivery_table(G, routes_data, vehicles, deliveries):
     """
     Create a detailed delivery route table with:
@@ -250,18 +264,22 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
     total_weight = total_volume = total_distance = total_time = 0
     ASSUME_SPEED_KMPH = 30
 
-    delivery_node_map = {
-        get_nearest_node(G, *dp["coords"]): dp for dp in deliveries
-    }
+    delivery_node_map = {get_nearest_node(G, *dp["coords"]): dp for dp in deliveries}
 
     mapped_nodes = set(delivery_node_map.keys())
-    unmatched = [dp for dp in deliveries if get_nearest_node(G, *dp["coords"]) not in mapped_nodes]
+    unmatched = [
+        dp
+        for dp in deliveries
+        if get_nearest_node(G, *dp["coords"]) not in mapped_nodes
+    ]
     if unmatched:
         print("WARNING: Some delivery points were not mapped to the route:")
         for u in unmatched:
             print(f"- ID {u['id']} at {u['coords']}")
 
-    for route_index, (route_name, assignment) in enumerate(routes_data.items(), start=1):
+    for route_index, (route_name, assignment) in enumerate(
+        routes_data.items(), start=1
+    ):
         vehicle = assignment["vehicle"]
         path_nodes = assignment["path"]
         vehicle_plate = assignment["vehicle"]["license_plate"]
@@ -274,15 +292,24 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         total_stops = assignment.get("total_stops", 0)
 
         # START point
-        rows.append([
-            f"Route {route_index}",
-            vehicle["id"],
-            vehicle_plate,
-            vehicle["type"],
-            "START",
-            "Warehouse",
-            "", "", "", "", "", "", "", total_stops
-        ])
+        rows.append(
+            [
+                f"Route {route_index}",
+                vehicle["id"],
+                vehicle_plate,
+                vehicle["type"],
+                "START",
+                "Warehouse",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                total_stops,
+            ]
+        )
 
         for node in path_nodes[1:-1]:
             matched_dp = delivery_node_map.get(node)
@@ -292,48 +319,67 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
                 volume = matched_dp["volume_m3"]
                 route_weight += weight
                 route_volume += volume
-                rows.append([
-                    f"Route {route_index}",
-                    vehicle["id"],
-                    vehicle_plate,
-                    vehicle["type"],
-                    f"STOP {stop_counter}",
-                    matched_dp["id"],
-                    matched_dp["coords"][0],
-                    matched_dp["coords"][1],
-                    weight,
-                    volume,
-                    "", "", "", "",
-                    ""  # Ensure consistent number of columns
-                ])
+                rows.append(
+                    [
+                        f"Route {route_index}",
+                        vehicle["id"],
+                        vehicle_plate,
+                        vehicle["type"],
+                        f"STOP {stop_counter}",
+                        matched_dp["id"],
+                        matched_dp["coords"][0],
+                        matched_dp["coords"][1],
+                        weight,
+                        volume,
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",  # Ensure consistent number of columns
+                    ]
+                )
 
         # END point
-        rows.append([
-            f"Route {route_index}",
-            vehicle["id"],
-            vehicle_plate,
-            vehicle["type"],
-            "END",
-            "Warehouse",
-            "", "", "", "", "", "", "", "",
-            ""
-        ])
+        rows.append(
+            [
+                f"Route {route_index}",
+                vehicle["id"],
+                vehicle_plate,
+                vehicle["type"],
+                "END",
+                "Warehouse",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+            ]
+        )
 
         # Route summary row
-        rows.append([
-            f"Route {route_index} TOTAL",
-            vehicle["id"],
-            vehicle_plate,
-            vehicle["type"],
-            "", "", "", "",
-            route_weight,
-            route_volume,
-            f"{(route_weight / vehicle['max_weight_kg']):.0%}",
-            f"{(route_volume / (vehicle['length_m'] * vehicle['width_m'] * vehicle['height_m'])):.0%}",
-            route_distance_km,
-            route_time_hr,
-            ""
-        ])
+        rows.append(
+            [
+                f"Route {route_index} TOTAL",
+                vehicle["id"],
+                vehicle_plate,
+                vehicle["type"],
+                "",
+                "",
+                "",
+                "",
+                route_weight,
+                route_volume,
+                f"{(route_weight / vehicle['max_weight_kg']):.0%}",
+                f"{(route_volume / (vehicle['length_m'] * vehicle['width_m'] * vehicle['height_m'])):.0%}",
+                route_distance_km,
+                route_time_hr,
+                "",
+            ]
+        )
 
         total_weight += route_weight
         total_volume += route_volume
@@ -341,30 +387,46 @@ def generate_delivery_table(G, routes_data, vehicles, deliveries):
         total_time += route_time_hr
 
     # Global TOTAL row
-    rows.append([
-        "TOTAL", "", "", "", "", "", "", "",
-        total_weight,
-        total_volume,
-        "", "", total_distance, total_time, ""
-    ])
+    rows.append(
+        [
+            "TOTAL",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            total_weight,
+            total_volume,
+            "",
+            "",
+            total_distance,
+            total_time,
+            "",
+        ]
+    )
 
-    df = pd.DataFrame(rows, columns=[
-        "Route",
-        "Vehicle ID",
-        "License Plate",
-        "Type",
-        "Stop",
-        "Delivery Point",
-        "Latitude",
-        "Longitude",
-        "Weight (kg)",
-        "Volume (m³)",
-        "Weight %",
-        "Volume %",
-        "Distance (km)",
-        "Time (hours)",
-        "Total Stops"
-    ])
+    df = pd.DataFrame(
+        rows,
+        columns=[
+            "Route",
+            "Vehicle ID",
+            "License Plate",
+            "Type",
+            "Stop",
+            "Delivery Point",
+            "Latitude",
+            "Longitude",
+            "Weight (kg)",
+            "Volume (m³)",
+            "Weight %",
+            "Volume %",
+            "Distance (km)",
+            "Time (hours)",
+            "Total Stops",
+        ],
+    )
 
     csv_path = "data/output/delivery_routes.csv"
     df.to_csv(csv_path, index=False)
