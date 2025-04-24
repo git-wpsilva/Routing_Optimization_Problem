@@ -16,7 +16,7 @@ WAREHOUSE_COORDS = (WAREHOUSE_LAT, WAREHOUSE_LON)
 DELIVERY_CENTER_COORDS = (DELIVERY_CENTER_LAT, DELIVERY_CENTER_LON)
 
 
-def generate_random_delivery_points(G, num_points=10):
+def generate_random_delivery_points(G, num_points=50):
     """
     Generate delivery points directly on road network nodes within radius.
     Prefer nodes not on major highways (by skipping edges tagged as motorway or trunk).
@@ -61,7 +61,7 @@ def generate_random_delivery_points(G, num_points=10):
             "id": i,
             "coords": coord,
             "weight_kg": round(random.uniform(5, 50), 2),
-            "volume_m3": round(random.uniform(0.05, 0.3), 3),
+            "volume_m3": round(random.uniform(0.5, 3), 3),
             "priority": random.choice(["High", "Medium", "Low"]),
             "restricted_area": random.choice(
                 ["Rodízio Municipal", "ZMRC", "VER", None]

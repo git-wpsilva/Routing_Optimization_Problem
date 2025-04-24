@@ -11,7 +11,7 @@
         -46.7453282
       ],
       "weight_kg": 13.19,
-      "volume_m3": 0.267,
+      "volume_m3": 8.741,
       "priority": "Medium",
       "restricted_area": "ZMRC",
       "restriction_times": {
@@ -74,7 +74,7 @@
         -46.6497408
       ],
       "weight_kg": 39.29,
-      "volume_m3": 0.068,
+      "volume_m3": 1.183,
       "priority": "Low",
       "restricted_area": null,
       "restriction_times": {
@@ -137,7 +137,7 @@
         -46.6723634
       ],
       "weight_kg": 10.7,
-      "volume_m3": 0.05,
+      "volume_m3": 0.517,
       "priority": "High",
       "restricted_area": "ZMRC",
       "restriction_times": {
@@ -200,7 +200,7 @@
         -46.738577
       ],
       "weight_kg": 39.81,
-      "volume_m3": 0.29,
+      "volume_m3": 9.621,
       "priority": "High",
       "restricted_area": "ZMRC",
       "restriction_times": {
@@ -263,7 +263,7 @@
         -46.7531439
       ],
       "weight_kg": 18.02,
-      "volume_m3": 0.29,
+      "volume_m3": 9.634,
       "priority": "Low",
       "restricted_area": "ZMRC",
       "restriction_times": {
@@ -326,7 +326,7 @@
         -46.6853895
       ],
       "weight_kg": 13.18,
-      "volume_m3": 0.292,
+      "volume_m3": 9.701,
       "priority": "High",
       "restricted_area": null,
       "restriction_times": {
@@ -389,7 +389,7 @@
         -46.718038
       ],
       "weight_kg": 18.45,
-      "volume_m3": 0.14,
+      "volume_m3": 3.931,
       "priority": "High",
       "restricted_area": "ZMRC",
       "restriction_times": {
@@ -452,7 +452,7 @@
         -46.5721823
       ],
       "weight_kg": 16.87,
-      "volume_m3": 0.133,
+      "volume_m3": 3.653,
       "priority": "Low",
       "restricted_area": "Rodízio Municipal",
       "restriction_times": {
@@ -515,7 +515,7 @@
         -46.6895041
       ],
       "weight_kg": 31.82,
-      "volume_m3": 0.227,
+      "volume_m3": 7.223,
       "priority": "High",
       "restricted_area": "VER",
       "restriction_times": {
@@ -578,7 +578,7 @@
         -46.7407785
       ],
       "weight_kg": 20.99,
-      "volume_m3": 0.127,
+      "volume_m3": 3.408,
       "priority": "Low",
       "restricted_area": "VER",
       "restriction_times": {

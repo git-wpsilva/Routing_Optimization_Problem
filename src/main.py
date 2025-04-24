@@ -15,6 +15,7 @@ from mapping.delivery_points import (
     generate_random_delivery_points,
     plot_delivery_points,
 )
+from mapping.generate_qgis_project import generate_qgis_project
 from mapping.map_data_export import export_map_data
 from mapping.restrictions_map import plot_restrictions
 from optimization.route_planner import (
@@ -173,6 +174,8 @@ def main():
 
     # Call export after everything is cached
     export_map_data()
+    generate_qgis_project()
+    print(f"QGIS project saved")
 
 
 if __name__ == "__main__":
