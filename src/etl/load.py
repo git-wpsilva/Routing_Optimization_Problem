@@ -21,6 +21,13 @@ def load_geojson(filepath):
 def save_geojson(data, filepath):
     save_json(data, filepath)
 
+def save_geojson_from_features(features, filepath):
+    """Save a list of features as a full GeoJSON FeatureCollection."""
+    geojson_data = {
+        "type": "FeatureCollection",
+        "features": features
+    }
+    save_json(geojson_data, filepath)
 
 def load_pickle(filepath):
     with open(filepath, "rb") as file:
