@@ -3,7 +3,7 @@ import pickle
 
 import osmnx as ox
 
-RESTRICTIONS_FILE = "data/input/restrictions/restrictions.json"
+from utils.config import RESTRICTIONS_FILE
 
 
 def load_restrictions():

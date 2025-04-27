@@ -10,11 +10,10 @@ from utils.config import (
     DELIVERY_DAY,
     DELIVERY_HOUR,
     HOLIDAY,
+    IGNORE_RESTRICTIONS,
+    ROAD_NETWORK_FILE,
+    WAREHOUSE_COORDS,
 )
-
-ROAD_NETWORK_FILE = "data/output/road_network.pkl"
-WAREHOUSE_COORDS = (-23.495652, -46.655389)
-IGNORE_RESTRICTIONS = False  # Set to True to disable delivery constraints
 
 
 def load_road_network():

@@ -1,54 +1,63 @@
-import json
 import os
 
 import folium
 
+from etl.load import load_json
+from utils.config import CACHE_DIR
 
-def load_json(filepath):
-    """Load a JSON file."""
-    with open(filepath, "r", encoding="utf-8") as file:
-        return json.load(file)
+RESTRICTION_COLOR_MAP = {
+    "Rodízio Municipal": "red",
+    "VER": "darkred",
+    "ZMRC": "blue",
+    "VUC": "green",
+}
 
 
 def plot_restrictions(base_map):
-    """Overlay restriction zones on an existing map."""
     print("Loading restriction data...")
 
-    restriction_files = {
-        "Zona do Mini Anel - Zona de Rodízio": "data/output/enriched/Caminhão 1.json",
-        "Restrição 2": "data/output/enriched/Caminhão 2.json",
-        "Restrição 3": "data/output/enriched/Caminhão 3.json",
-    }
-
-    # Define colors for restriction types
-    restriction_colors = {"Rodízio Municipal": "red", "VER": "darkred", "VUC": "blue"}
-
-    for layer_name, filepath in restriction_files.items():
-        if not os.path.exists(filepath):
-            print(f"Warning: Restriction file {filepath} not found. Skipping...")
+    for filename in os.listdir(CACHE_DIR):
+        if not filename.startswith("restriction_") or not filename.endswith(".geojson"):
             continue
 
-        layer = folium.FeatureGroup(name=layer_name)
-        restriction_data = load_json(filepath)
+        filepath = os.path.join(CACHE_DIR, filename)
+        try:
+            data = load_json(filepath)
+        except Exception as e:
+            print(f"[ERROR] Failed to load {filename}: {e}")
+            continue
 
-        for feature in restriction_data["features"]:
-            restriction_type = feature["properties"].get("restriction_type", "Unknown")
-            color = restriction_colors.get(restriction_type, "black")
+        layer_name = (
+            filename.replace("restriction_", "")
+            .replace(".geojson", "")
+            .replace("_", " ")
+            .title()
+        )
+        restriction_layer = folium.FeatureGroup(name=layer_name)
+
+        for feature in data.get("features", []):
+            restriction_type = feature.get("properties", {}).get(
+                "restriction_type", layer_name
+            )
+            color = RESTRICTION_COLOR_MAP.get(restriction_type, "gray")
 
             folium.GeoJson(
                 feature,
                 name=restriction_type,
-                style_function=lambda f: {
+                style_function=lambda f, color=color: {
                     "color": color,
-                    "weight": 3,
-                    "fillOpacity": 0.2,  # if color == "red" else 0.8,
+                    "weight": 2,
+                    "fillOpacity": 0.3 if color != "gray" else 0.1,
                 },
+                tooltip=folium.Tooltip(
+                    feature.get("properties", {}).get("Name", "Unknown")
+                ),
                 popup=folium.Popup(
-                    feature["properties"].get("Description", "No Description"),
+                    feature.get("properties", {}).get("Description", "No description"),
                     max_width=300,
                 ),
-            ).add_to(layer)
+            ).add_to(restriction_layer)
 
-        base_map.add_child(layer)
+        base_map.add_child(restriction_layer)
 
-    return base_map  # Return the updated map to main.py
+    return base_map

@@ -4,12 +4,14 @@ import pickle
 
 import geojson
 
-EXPORT_PATH = "data/output/map_data_export.json"
-GEOJSON_DIR = "data/output/routes_geojson"
-CACHE_DIR = "data/output/cache"
-RESTRICTION_INDEX_FILE = os.path.join(CACHE_DIR, "restriction_data.json")
+from utils.config import (
+    CACHE_DIR,
+    EXPORT_PATH,
+    RESTRICTION_INDEX_FILE,
+    ROUTES_GEOJSON_DIR,
+)
 
-os.makedirs(GEOJSON_DIR, exist_ok=True)
+os.makedirs(ROUTES_GEOJSON_DIR, exist_ok=True)
 
 
 def export_map_data():
@@ -73,7 +75,7 @@ def export_map_data():
                 if y is not None and x is not None:
                     coords.append({"lat": y, "lon": x})
 
-        geo_path = os.path.join(GEOJSON_DIR, f"route_{route_id}.geojson")
+        geo_path = os.path.join(ROUTES_GEOJSON_DIR, f"route_{route_id}.geojson")
         line = geojson.LineString([(c["lon"], c["lat"]) for c in coords])
         feature = geojson.Feature(
             geometry=line,

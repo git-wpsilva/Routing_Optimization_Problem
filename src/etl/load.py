@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+
 import pandas as pd
 
 
@@ -14,20 +15,10 @@ def save_json(data, filepath):
         json.dump(data, file, indent=4, ensure_ascii=False)
 
 
-def load_geojson(filepath):
-    return load_json(filepath)
-
-
-def save_geojson(data, filepath):
-    save_json(data, filepath)
-
 def save_geojson_from_features(features, filepath):
-    """Save a list of features as a full GeoJSON FeatureCollection."""
-    geojson_data = {
-        "type": "FeatureCollection",
-        "features": features
-    }
+    geojson_data = {"type": "FeatureCollection", "features": features}
     save_json(geojson_data, filepath)
+
 
 def load_pickle(filepath):
     with open(filepath, "rb") as file:
@@ -49,3 +40,9 @@ def save_csv(df, filepath):
 
 def file_exists(filepath):
     return os.path.exists(filepath)
+
+
+def save_map(base_map, filepath):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    base_map.save(filepath)
+    print(f"[MAP] Saved: {filepath}")

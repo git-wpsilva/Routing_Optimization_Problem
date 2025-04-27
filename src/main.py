@@ -11,6 +11,9 @@ from etl.extract import (
     extract_road_network,
     extract_vehicle_fleet,
 )
+from etl.load import save_map
+from etl.transform import run_transformation
+from mapping.cluster_map import plot_clusters_on_map
 from mapping.delivery_points import (
     generate_random_delivery_points,
     plot_delivery_points,
@@ -18,33 +21,25 @@ from mapping.delivery_points import (
 from mapping.generate_qgis_project import generate_qgis_project
 from mapping.map_data_export import export_map_data
 from mapping.restrictions_map import plot_restrictions
+from optimization.delivery_clustering import generate_delivery_clusters
 from optimization.route_planner import (
     assign_deliveries_to_routes,
     compute_shortest_path,
     generate_delivery_table,
     plot_route,
 )
-
-# Constants
-MAP_OUTPUT_DIR = "data/output/maps"
-GEOJSON_DIR = "data/output/routes_geojson"
-CACHE_DIR = "data/output/cache"
-STEPS_DIR = os.path.join(MAP_OUTPUT_DIR, "steps")
-FINAL_MAP_PATH = os.path.join(MAP_OUTPUT_DIR, "route_plan_map.html")
-WAREHOUSE_COORDS = (-23.495652, -46.655389)
-DEBUG_ROUTE_PATH = "data/output/debug_routes.csv"
-
-# Ensure output dirs exist
-os.makedirs(STEPS_DIR, exist_ok=True)
-os.makedirs(GEOJSON_DIR, exist_ok=True)
-os.makedirs(CACHE_DIR, exist_ok=True)
+from utils.config import (
+    CACHE_DIR,
+    DEBUG_ROUTE_PATH,
+    FINAL_MAP_PATH,
+    ROUTES_GEOJSON_DIR,
+    STEPS_DIR,
+    WAREHOUSE_COORDS,
+)
 
 
-def save_map(base_map, step_name):
-    """Save an intermediate step of the map."""
-    step_map_path = os.path.join(STEPS_DIR, f"{step_name}.html")
-    base_map.save(step_map_path)
-    print(f"Step saved: {step_map_path}")
+def log_step(message):
+    print(f"\n=== {message} ===")
 
 
 def save_geojson_route(route_id, coords, vehicle, distance, num_stops):
@@ -61,19 +56,21 @@ def save_geojson_route(route_id, coords, vehicle, distance, num_stops):
             "total_stops": num_stops,
         },
     )
-    geo_path = os.path.join(GEOJSON_DIR, f"route_{route_id}.geojson")
+    geo_path = os.path.join(ROUTES_GEOJSON_DIR, f"route_{route_id}.geojson")
     with open(geo_path, "w") as f:
         geojson.dump(feature, f)
     print(f"[GEOJSON] Saved route → {geo_path}")
 
 
 def main():
-    print("Loading road network and vehicles...")
+    log_step("Running transformation pipeline")
+    run_transformation()
+
+    log_step("Loading road network and vehicles")
     build_restriction_index_if_needed()
     G = extract_road_network()
     vehicles = extract_vehicle_fleet()
 
-    # Cache G and vehicles
     with open(os.path.join(CACHE_DIR, "road_network.pkl"), "wb") as f:
         pickle.dump(G, f)
     with open(
@@ -81,12 +78,12 @@ def main():
     ) as f:
         json.dump(vehicles, f, indent=2, ensure_ascii=False)
 
-    print("Generating delivery points...")
-    deliveries = generate_random_delivery_points(G, num_points=10)
+    log_step("Generating delivery points")
+    deliveries = generate_random_delivery_points(G, num_points=20)
     with open(os.path.join(CACHE_DIR, "deliveries.json"), "w", encoding="utf-8") as f:
         json.dump(deliveries, f, indent=2, ensure_ascii=False)
 
-    print("Initializing base map...")
+    log_step("Initializing base map")
     all_coords = [
         (data["y"], data["x"])
         for node, data in G.nodes(data=True)
@@ -99,15 +96,22 @@ def main():
     else:
         base_map = folium.Map(location=[-23.495652, -46.655389], zoom_start=12)
 
-    print("Adding restriction zones...")
+    log_step("Plotting restriction zones")
     base_map = plot_restrictions(base_map)
-    save_map(base_map, "01_restrictions")
+    save_map(base_map, os.path.join(STEPS_DIR, "01_restrictions.html"))
 
-    print("Plotting delivery points and warehouse...")
+    log_step("Plotting delivery points and warehouse")
     base_map = plot_delivery_points(base_map, deliveries)
-    save_map(base_map, "02_delivery_points")
+    save_map(base_map, os.path.join(STEPS_DIR, "02_delivery_points.html"))
 
-    print("Assigning routes and generating delivery table...")
+    log_step("Generating delivery clusters")
+    generate_delivery_clusters()
+
+    log_step("Plotting delivery clusters")
+    base_map = plot_clusters_on_map(base_map)
+    save_map(base_map, os.path.join(STEPS_DIR, "04_clusters.html"))
+
+    log_step("Assigning routes and generating delivery table")
     assignments = assign_deliveries_to_routes(G, deliveries, vehicles)
     with open(os.path.join(CACHE_DIR, "assignments.json"), "w", encoding="utf-8") as f:
         json.dump(assignments, f, indent=2, ensure_ascii=False)
@@ -160,22 +164,20 @@ def main():
         )
 
     generate_delivery_table(G, routes_data, vehicles, deliveries)
-    save_map(base_map, "03_routes")
+    save_map(base_map, os.path.join(STEPS_DIR, "03_routes.html"))
 
     folium.LayerControl().add_to(base_map)
 
-    print("Saving debug route CSV...")
+    log_step("Saving debug route CSV")
     df_debug = pd.DataFrame(debug_rows)
     df_debug.to_csv(DEBUG_ROUTE_PATH, index=False)
-    print(f"Saved debug table → {DEBUG_ROUTE_PATH}")
+    print(f"[DEBUG] Saved debug table → {DEBUG_ROUTE_PATH}")
 
-    print("Final map saved.")
-    base_map.save(FINAL_MAP_PATH)
-
-    # Call export after everything is cached
+    log_step("Saving final map and exporting")
+    save_map(base_map, FINAL_MAP_PATH)
     export_map_data()
     generate_qgis_project()
-    print(f"QGIS project saved")
+    print("[QGIS] Project exported successfully")
 
 
 if __name__ == "__main__":

@@ -4,16 +4,13 @@ import random
 import folium
 from geopy.distance import geodesic
 
-# Constants
-DELIVERY_CENTER_LAT, DELIVERY_CENTER_LON = (
-    -23.556664,
-    -46.653497,
-)  # Center of delivery radius
-DELIVERY_RADIUS_KM = 15
-WAREHOUSE_LAT, WAREHOUSE_LON = -23.495652, -46.655389
-WAREHOUSE_OFFSET = 0.000001
-WAREHOUSE_COORDS = (WAREHOUSE_LAT, WAREHOUSE_LON)
-DELIVERY_CENTER_COORDS = (DELIVERY_CENTER_LAT, DELIVERY_CENTER_LON)
+from utils.config import (
+    DELIVERY_CENTER_COORDS,
+    DELIVERY_RADIUS_KM,
+    WAREHOUSE_LAT,
+    WAREHOUSE_LON,
+    WAREHOUSE_OFFSET,
+)
 
 
 def generate_random_delivery_points(G, num_points=50):
