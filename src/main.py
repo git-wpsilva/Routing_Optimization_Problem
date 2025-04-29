@@ -1,9 +1,7 @@
 import json
 import os
-import pickle
 
 import folium
-import geojson
 import pandas as pd
 
 from etl.extract import (
@@ -21,45 +19,23 @@ from mapping.delivery_points import (
 from mapping.generate_qgis_project import generate_qgis_project
 from mapping.map_data_export import export_map_data
 from mapping.restrictions_map import plot_restrictions
-from optimization.delivery_clustering import generate_delivery_clusters
+from optimization.assign_clusters_heuristic import assign_clusters_heuristic
 from optimization.route_planner import (
-    assign_deliveries_to_routes,
-    compute_shortest_path,
+    audit_delivery_integrity,
     generate_delivery_table,
     plot_route,
+    save_routes_to_geopackage,
 )
 from utils.config import (
     CACHE_DIR,
     DEBUG_ROUTE_PATH,
     FINAL_MAP_PATH,
-    ROUTES_GEOJSON_DIR,
     STEPS_DIR,
-    WAREHOUSE_COORDS,
 )
 
 
 def log_step(message):
     print(f"\n=== {message} ===")
-
-
-def save_geojson_route(route_id, coords, vehicle, distance, num_stops):
-    """Save the route coordinates as a GeoJSON LineString."""
-    line = geojson.LineString([(lon, lat) for lat, lon in coords])
-    feature = geojson.Feature(
-        geometry=line,
-        properties={
-            "route_id": route_id,
-            "vehicle_id": vehicle["id"],
-            "license_plate": vehicle["license_plate"],
-            "vehicle_type": vehicle["type"],
-            "distance_km": round(distance / 1000, 2),
-            "total_stops": num_stops,
-        },
-    )
-    geo_path = os.path.join(ROUTES_GEOJSON_DIR, f"route_{route_id}.geojson")
-    with open(geo_path, "w") as f:
-        geojson.dump(feature, f)
-    print(f"[GEOJSON] Saved route → {geo_path}")
 
 
 def main():
@@ -70,13 +46,6 @@ def main():
     build_restriction_index_if_needed()
     G = extract_road_network()
     vehicles = extract_vehicle_fleet()
-
-    with open(os.path.join(CACHE_DIR, "road_network.pkl"), "wb") as f:
-        pickle.dump(G, f)
-    with open(
-        os.path.join(CACHE_DIR, "vehicle_fleet.json"), "w", encoding="utf-8"
-    ) as f:
-        json.dump(vehicles, f, indent=2, ensure_ascii=False)
 
     log_step("Generating delivery points")
     deliveries = generate_random_delivery_points(G, num_points=20)
@@ -105,51 +74,25 @@ def main():
     save_map(base_map, os.path.join(STEPS_DIR, "02_delivery_points.html"))
 
     log_step("Generating delivery clusters")
+    from optimization.delivery_clustering import generate_delivery_clusters
+
     generate_delivery_clusters()
 
     log_step("Plotting delivery clusters")
     base_map = plot_clusters_on_map(base_map)
     save_map(base_map, os.path.join(STEPS_DIR, "04_clusters.html"))
 
-    log_step("Assigning routes and generating delivery table")
-    assignments = assign_deliveries_to_routes(G, deliveries, vehicles)
-    with open(os.path.join(CACHE_DIR, "assignments.json"), "w", encoding="utf-8") as f:
-        json.dump(assignments, f, indent=2, ensure_ascii=False)
+    log_step("Assigning clusters to vehicles and generating routes")
+    assignments = assign_clusters_heuristic(G, vehicles)
 
     debug_rows = []
-    routes_data = {}
     for route_number, assignment in assignments.items():
         vehicle = assignment["vehicle"]
-        deliveries_for_vehicle = assignment["deliveries"]
-        path_nodes, distance = compute_shortest_path(
-            G, WAREHOUSE_COORDS, deliveries_for_vehicle
-        )
+        path_nodes = assignment["path"]
+        distance = assignment["distance_m"]
 
-        routes_data[route_number] = {
-            "vehicle": vehicle,
-            "path": path_nodes,
-            "distance_m": distance,
-            "deliveries": deliveries_for_vehicle,
-        }
-
-        route_coords = []
-        for node in path_nodes:
-            if node in G.nodes:
-                y = G.nodes[node].get("y")
-                x = G.nodes[node].get("x")
-                if y is not None and x is not None:
-                    route_coords.append((y, x))
-
-        if route_coords:
-            save_geojson_route(
-                route_number,
-                route_coords,
-                vehicle,
-                distance,
-                len(deliveries_for_vehicle),
-            )
-
-        plot_route(base_map, G, path_nodes, vehicle["license_plate"], route_number)
+        print(f"[DEBUG] Route {route_number} has {len(path_nodes)} nodes in path.")
+        plot_route(base_map, G, path_nodes, route_number, color=route_number[-1])
 
         debug_rows.append(
             {
@@ -157,13 +100,12 @@ def main():
                 "Vehicle ID": vehicle["id"],
                 "License Plate": vehicle["license_plate"],
                 "Type": vehicle["type"],
-                "Path Nodes": path_nodes,
                 "Distance (km)": round(distance / 1000, 2),
-                "Total Stops": len(deliveries_for_vehicle),
             }
         )
 
-    generate_delivery_table(G, routes_data, vehicles, deliveries)
+    generate_delivery_table(G, assignments)
+    save_routes_to_geopackage(G, assignments)
     save_map(base_map, os.path.join(STEPS_DIR, "03_routes.html"))
 
     folium.LayerControl().add_to(base_map)
@@ -178,6 +120,10 @@ def main():
     export_map_data()
     generate_qgis_project()
     print("[QGIS] Project exported successfully")
+
+    log_step("Running delivery audit")
+    audit_delivery_integrity()
+
 
 
 if __name__ == "__main__":

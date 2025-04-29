@@ -23024,8 +23024,7 @@
           "lat": -23.4956777,
           "lon": -46.655377
         }
-      ],
-      "geojson_file": "data/output/routes_geojson\\route_Route 1.geojson"
+      ]
     },
     {
       "route_id": "Route 2",
@@ -28026,8 +28025,7 @@
           "lat": -23.4956777,
           "lon": -46.655377
         }
-      ],
-      "geojson_file": "data/output/routes_geojson\\route_Route 2.geojson"
+      ]
     },
     {
       "route_id": "Route 3",
@@ -33447,8 +33445,7 @@
           "lat": -23.4956777,
           "lon": -46.655377
         }
-      ],
-      "geojson_file": "data/output/routes_geojson\\route_Route 3.geojson"
+      ]
     }
   ]
 }

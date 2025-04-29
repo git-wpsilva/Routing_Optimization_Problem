@@ -47,16 +47,13 @@ def merge_close_buffers(buffers_gdf, distance_threshold):
                 assigned[j] = cluster_id
                 group.append(j)
         cluster_geom = unary_union([buffers_gdf.geometry[k] for k in group])
-        clusters.append((f"Cluster {cluster_id}", cluster_geom, group))
+        clusters.append((cluster_id, cluster_geom, group))
         cluster_id += 1
 
     return clusters
 
 
 def generate_delivery_clusters():
-    if os.path.exists(GPKG_PATH):
-        os.remove(GPKG_PATH)
-
     path_zmrc = os.path.join(CACHE_DIR, "restriction_ZMRC.geojson")
     path_rodizio = os.path.join(CACHE_DIR, "restriction_Rodizio_Municipal.geojson")
     zmrc_shape = shape(gpd.read_file(path_zmrc).geometry.iloc[0]).buffer(0)
@@ -96,9 +93,9 @@ def generate_delivery_clusters():
         )
         merged = merge_close_buffers(buffer_gdf, MERGE_DISTANCE)
 
-        for cluster_id, geom, group in merged:
+        for cluster_id_raw, geom, group in merged:
             member_ids = [outside[idx][0] for idx in group]
-            cluster_members[cluster_id] = {
+            cluster_members[cluster_id_raw] = {
                 "geometry": geom,
                 "members": member_ids,
                 "requires_zmrc": False,
@@ -159,7 +156,8 @@ def generate_delivery_clusters():
             small_clusters = [
                 cid
                 for cid, data in clusters.items()
-                if len(data["members"]) < min_points_per_cluster
+                if isinstance(cid, int)
+                and len(data["members"]) < min_points_per_cluster
             ]
             if not small_clusters:
                 break
@@ -189,27 +187,33 @@ def generate_delivery_clusters():
     all_clusters = force_merge_clusters(all_clusters)
 
     used_ids = set()
-    for cluster_id, data in all_clusters.items():
-        data["members"] = list(set(data["members"]))
-        for idx in data["members"]:
-            if idx not in used_ids:
-                debug_data.append({"delivery_id": idx, "cluster_id": cluster_id})
-                used_ids.add(idx)
+    debug_data = []
+    export_counter = 1
 
-    # Export to GeoPackage
     for cluster_id, data in all_clusters.items():
+        if isinstance(cluster_id, int):
+            cluster_name = f"Cluster {export_counter}"
+            export_counter += 1
+        else:
+            cluster_name = cluster_id
+
         gdf = gpd.GeoDataFrame(
             [
                 {
                     "geometry": data["geometry"],
-                    "cluster_id": cluster_id,
+                    "cluster_id": cluster_name,
                     "requires_zmrc": data.get("requires_zmrc", False),
                     "requires_rodizio": data.get("requires_rodizio", False),
                 }
             ],
             crs="EPSG:4326",
         )
-        gdf.to_file(GPKG_PATH, layer=f"cluster_{cluster_id}", driver="GPKG")
+        gdf.to_file(GPKG_PATH, layer=cluster_name, driver="GPKG")
+
+        for idx in data["members"]:
+            if idx not in used_ids:
+                debug_data.append({"delivery_id": idx, "cluster_id": cluster_name})
+                used_ids.add(idx)
 
     debug_path = os.path.join(CACHE_DIR, "cluster_debug.csv")
     with open(debug_path, "w", newline="", encoding="utf-8") as csvfile:
@@ -218,8 +222,10 @@ def generate_delivery_clusters():
         for row in debug_data:
             writer.writerow(row)
 
-    print(f"[CLUSTERS] Saved to single GeoPackage: {GPKG_PATH}")
-    print(f"[DEBUG] Saved: {debug_path}")
+    print(
+        f"[CLUSTERS] Saved GeoPackage with {export_counter - 1} clusters + fixed zones."
+    )
+    print(f"[DEBUG] Saved debug CSV at: {debug_path}")
 
 
 if __name__ == "__main__":

@@ -2,16 +2,11 @@ import json
 import os
 import pickle
 
-import geojson
-
 from utils.config import (
     CACHE_DIR,
     EXPORT_PATH,
     RESTRICTION_INDEX_FILE,
-    ROUTES_GEOJSON_DIR,
 )
-
-os.makedirs(ROUTES_GEOJSON_DIR, exist_ok=True)
 
 
 def export_map_data():
@@ -60,12 +55,11 @@ def export_map_data():
                     }
                 )
 
-    # Gerar GeoJSON das rotas
+    # Process routes directly in memory
     for route_id, assignment in assignments.items():
         vehicle = assignment["vehicle"]
         path_nodes = assignment["path"]
         distance = assignment["distance_m"]
-        deliveries_for_vehicle = assignment["deliveries"]
 
         coords = []
         for node in path_nodes:
@@ -75,22 +69,6 @@ def export_map_data():
                 if y is not None and x is not None:
                     coords.append({"lat": y, "lon": x})
 
-        geo_path = os.path.join(ROUTES_GEOJSON_DIR, f"route_{route_id}.geojson")
-        line = geojson.LineString([(c["lon"], c["lat"]) for c in coords])
-        feature = geojson.Feature(
-            geometry=line,
-            properties={
-                "route_id": route_id,
-                "vehicle_id": vehicle["id"],
-                "license_plate": vehicle["license_plate"],
-                "vehicle_type": vehicle["type"],
-                "distance_km": round(distance / 1000, 2),
-                "total_stops": len(deliveries_for_vehicle),
-            },
-        )
-        with open(geo_path, "w") as f:
-            geojson.dump(feature, f)
-
         export["routes"].append(
             {
                 "route_id": route_id,
@@ -98,7 +76,6 @@ def export_map_data():
                 "distance_km": round(distance / 1000, 2),
                 "path_nodes": path_nodes,
                 "coordinates": coords,
-                "geojson_file": geo_path,
             }
         )
 

@@ -1,3 +1,5 @@
+import os
+
 # === Delivery Schedule ===
 DELIVERY_DAY = "Tuesday"
 DELIVERY_HOUR = 10
@@ -42,6 +44,7 @@ FINAL_MAP_PATH = "data/output/maps/route_plan_map.html"
 
 # Debug
 DEBUG_ROUTE_PATH = "data/output/debug_routes.csv"
+DEBUG_CLUSTER_CSV = os.path.join(CACHE_DIR, "cluster_debug.csv")
 
 # Warehouse (Fixed Reference Point)
 WAREHOUSE_COORDS = (-23.495652, -46.655389)
